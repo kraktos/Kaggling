@@ -5,6 +5,9 @@ from numpy import genfromtxt
 from sklearn.ensemble import GradientBoostingRegressor
 import pandas as pd
 import datetime
+from sklearn.ensemble.forest import RandomForestRegressor
+import logloss
+import numpy as np
 
 
 def main():
@@ -26,24 +29,39 @@ def main():
     # print(df_train.loc[0:30, 'datetime'])
     print("DF Dim = " + str(df_train.shape))
 
-    training = df_train.loc[0:, ("atemp", "humidity", "windspeed")]
+    training = df_train.loc[0:, "datetime":"windspeed"]
     target = df_train.loc[0:, 'count']
     print("training Dim = " + str(training.shape))
     print("target Dim = " + str(target.shape))
 
-    test = df_test_temp.loc[0:, ("atemp", "humidity", "windspeed")]
+    test = df_test_temp.loc[0:, "datetime":"windspeed"]
     print("Test Dim = " + str(test.shape))
 
     # multi-core CPUs can use: rf = RandomForestClassifier(n_estimators=100, n_jobs=2)
-    regress = DecisionTreeRegressor(max_depth=9)
+    # regress = DecisionTreeRegressor(max_depth=9)
+    regress = RandomForestRegressor(n_estimators=80, max_depth=3)
     # regress = GradientBoostingRegressor(n_estimators=100, learning_rate=0.1, max_depth=7, random_state=0, loss='ls')
 
     # Simple K-Fold cross validation. 5 folds.
     cv = cross_validation.KFold(len(training), 5)
 
-    scores = cross_validation.cross_val_score(regress, training, target, scoring='mean_absolute_error', cv=cv)
+    # scores = results = []
 
-    print(scores.mean())
+    # print(scores.mean())
+
+    # iterate through the training and test cross validation segments and
+    # run the classifier on each one, aggregating the results into a list
+    results = []
+    # regress.fit(training, target)
+
+    for traincv, testcv in cv:
+        regress.fit(df_train.loc[traincv, "datetime":"windspeed"], df_train.loc[traincv, 'count'])
+        probas = regress.predict(df_train.loc[testcv, "datetime":"windspeed"])
+        results.append(logloss.llfun(df_train.loc[testcv, 'count'], probas))
+
+    # print out the mean of the cross-validated results
+    print("Results: " + str(np.array(results).mean()))
+
 
 if __name__ == "__main__":
     main()

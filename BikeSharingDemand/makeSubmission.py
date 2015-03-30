@@ -4,6 +4,7 @@ from sklearn.tree import DecisionTreeRegressor
 import pandas as pd
 import datetime
 import numpy as np
+from sklearn.ensemble.forest import RandomForestRegressor
 
 # https://www.kaggle.com/c/bike-sharing-demand
 
@@ -26,17 +27,19 @@ def main():
 
     print("DF Dim = " + str(df_train.shape))
 
-    training = df_train.loc[0:, 'datetime':'windspeed']
+    training = df_train.loc[0:, "datetime":"windspeed"]
     target = df_train.loc[0:, 'count']
     print("training Dim = " + str(training.shape))
     print("target Dim = " + str(target.shape))
 
-    test = df_test_temp.loc[0:, 'datetime':'windspeed']
+    test = df_test_temp.loc[0:, "datetime":"windspeed"]
     print("Test Dim = " + str(test.shape))
 
     # create and train the random forest
     # multi-core CPUs can use:
-    regress = DecisionTreeRegressor(max_depth=9)
+    # regress = DecisionTreeRegressor(max_depth=7)
+    regress = RandomForestRegressor(n_estimators=80, max_depth=9)
+
     # regress = GradientBoostingRegressor(n_estimators=50, learning_rate=0.1, max_depth=2, random_state=0, loss='ls')
 
     regress.fit(training, target)
@@ -44,6 +47,7 @@ def main():
     # output for submission
     np.savetxt("Data/submission.csv", np.column_stack((df_test_orig['datetime'], regress.predict(test))),
                delimiter="\t", fmt='%s,%f', header='datetime,count')
+
 
 
 if __name__ == "__main__":
