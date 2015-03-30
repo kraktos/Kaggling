@@ -15,37 +15,37 @@ def main():
     # TESTING ##############
     df_test_orig = pd.read_csv('Data/test.csv', header=0)
     df_test_temp = pd.read_csv('Data/test.csv', header=0)
-
     df_test_temp['datetime'] = df_test_temp.apply(lambda row: 12-datetime.datetime.strptime(row['datetime'],
                                                                                             '%Y-%m-%d %H:%M:%S').hour, axis=1)
-
     # TRAINING ##############
     df_train = pd.read_csv('Data/train.csv',  header=0)
-
     df_train['datetime'] = df_train.apply(lambda row: 12-datetime.datetime.strptime(row['datetime'],
                                                                                     '%Y-%m-%d %H:%M:%S').hour, axis=1)
 
-    print("DF Dim = " + str(df_train.shape))
-
+    # get the independant and dependant variables from training
     training = df_train.loc[0:, "datetime":"windspeed"]
-    target = df_train.loc[0:, 'count']
-    print("training Dim = " + str(training.shape))
-    print("target Dim = " + str(target.shape))
+    target_registered = df_train.loc[0:, 'registered']
+    target_casual = df_train.loc[0:, 'casual']
 
+    # get the independant variables from testing
     test = df_test_temp.loc[0:, "datetime":"windspeed"]
-    print("Test Dim = " + str(test.shape))
+
+    print("DataFrame Dimension = " + str(df_train.shape))
+    print("Training Dimension = " + str(training.shape))
+    print("Target Dimension = " + str(target_casual.shape))
+    print("Test Dimension = " + str(test.shape))
 
     # create and train the random forest
     # multi-core CPUs can use:
     # regress = DecisionTreeRegressor(max_depth=7)
-    regress = RandomForestRegressor(n_estimators=80, max_depth=9)
-
-    # regress = GradientBoostingRegressor(n_estimators=50, learning_rate=0.1, max_depth=2, random_state=0, loss='ls')
-
-    regress.fit(training, target)
+    regress_casual = RandomForestRegressor(n_estimators=80, max_depth=9)
+    regress_registered = RandomForestRegressor(n_estimators=80, max_depth=9)
+    regress_casual.fit(training, target_casual)
+    regress_registered.fit(training, target_registered)
 
     # output for submission
-    np.savetxt("Data/submission.csv", np.column_stack((df_test_orig['datetime'], regress.predict(test))),
+    np.savetxt("Data/submission.csv", np.column_stack((df_test_orig['datetime'],
+                            regress_casual.predict(test) + regress_registered.predict(test))),
                delimiter="\t", fmt='%s,%f', header='datetime,count')
 
 
