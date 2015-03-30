@@ -38,26 +38,20 @@ def main():
     print("Test Dim = " + str(test.shape))
 
     # multi-core CPUs can use: rf = RandomForestClassifier(n_estimators=100, n_jobs=2)
-    # regress = DecisionTreeRegressor(max_depth=9)
-    regress = RandomForestRegressor(n_estimators=80, max_depth=3)
-    # regress = GradientBoostingRegressor(n_estimators=100, learning_rate=0.1, max_depth=7, random_state=0, loss='ls')
+    # regress = DecisionTreeRegressor(max_depth=8)
+    # regress = RandomForestRegressor(n_estimators=200, max_depth=8)
+    regress = GradientBoostingRegressor(n_estimators=100, learning_rate=0.1, max_depth=7, random_state=0, loss='ls')
 
     # Simple K-Fold cross validation. 5 folds.
-    cv = cross_validation.KFold(len(training), 5)
-
-    # scores = results = []
-
-    # print(scores.mean())
+    cv = cross_validation.KFold(len(training), 6)
 
     # iterate through the training and test cross validation segments and
     # run the classifier on each one, aggregating the results into a list
     results = []
-    # regress.fit(training, target)
-
     for traincv, testcv in cv:
         regress.fit(df_train.loc[traincv, "datetime":"windspeed"], df_train.loc[traincv, 'count'])
-        probas = regress.predict(df_train.loc[testcv, "datetime":"windspeed"])
-        results.append(logloss.llfun(df_train.loc[testcv, 'count'], probas))
+        counts = regress.predict(df_train.loc[testcv, "datetime":"windspeed"])
+        results.append(logloss.llfun(df_train.loc[testcv, 'count'], counts))
 
     # print out the mean of the cross-validated results
     print("Results: " + str(np.array(results).mean()))

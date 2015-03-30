@@ -49,6 +49,5 @@ def main():
                delimiter="\t", fmt='%s,%f', header='datetime,count')
 
 
-
 if __name__ == "__main__":
     main()
